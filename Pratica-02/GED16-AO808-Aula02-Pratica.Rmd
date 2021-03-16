@@ -1,0 +1,136 @@
+---
+Encoding: UTF-8 Unicode
+title: "GED16/AO808: Análise de Regressão"
+subtitle: 'AULA02: Prática'
+author: "Ana Paula Lopes Schuch e Vinícius de Souza Lima"
+date: "1o. semestre/2021" # <`r Sys.Date()`>
+output:
+  html_document:
+    theme: sand
+    df_print: paged
+    number_sections: FALSE  
+---
+```{r include = FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(eval = TRUE, echo = TRUE)
+```
+
+----
+
+### Introdução
+
+"[Infecção hospitalar](https://www.prefeitura.sp.gov.br/cidade/secretarias/saude/vigilancia_em_saude/infeccao_hospitalar/index.php?p=6445) é uma infecção adquirida após a admissão do paciente na unidade hospitalar e pode se manifestar durante a internação ou após a alta. Pela sua gravidade e aumento do tempo de internação do paciente, é causa importante de morbidade e mortalidade, caracterizando-se como problema de saúde pública."
+
+Os dados disponíveis no arquivo `data/SCENIC.txt` foram coletados pelo CDC (US Center for Disease Control), no âmbito do [Projeto SCENIC](https://doi.org/10.1093/oxfordjournals.aje.a112928). O principal objetivo do projeto era determinar se programas de vigilância e controle foram capazes de reduzir as taxas de infecção hospitalar. Os dados referem-se a uma amostra de 113 hospitais selecionados a partir de um conjunto de 338 hospitais avaliados. Cada linha do conjunto de dados contém uma identificação (1-113) e fornece informação a respeito de 11 variáveis para um único hospital. Os dados apresentados referem-se ao período de 1975-1976.
+
+As 12 variáveis são:
+
+1. `IDnumber`: 1-113 (identificação do hospital)    
+2. `LengthStay`: período de internação médio de todos os pacientes no hospital (em dias)    
+3. `Age`: idade média dos pacientes (anos)   
+4. `InfectRisk`: risco de infecção, calculado como a probabilidade média estimada de contrair infecção no hospital (em %)   
+5. `CultRatio`: razão do número de culturas realizadas pelo número de pacientes sem sintomas de infecção hospitalar, vezes 100  
+6. `XrayRatio`: razão do número de raios-X realizados pelo número de pacientes sem sintomas de pneumonia, vezes 100  
+7. `NBeds`: número médio de leitos do hospital, durante o período avaliado  
+8. `MedSchool`: afiliação a alguma Escola de Medicina (1=Sim, 2=Não)  
+9. `Region`: região geográfica (1=NE, 2=NC, 3=S, 4=W)  
+10. `DailyCensus`: número médio de pacientes no hospital por dia, durante o período avaliado  
+11. `NNurses`: número médio de enfermeiros no hospital  
+12. `Facilities`: percentual de 35 serviços providos pelo hospital
+
+Acredita-se que o período médio de internação de um paciente `LengthStay` (variável de resposta) possa ser previsto a partir do risco de infecção hospitalar, bem como outras características do hospital e de procedimentos de rotina realizados.
+
+----
+
+### Análise Exploratória de Dados
+
+Inicialmente, vamos preparar a massa de dados `SCENIC`, para posterior análise.
+
+
+```{r}
+# Limpa a área de trabalho
+rm(list=ls())
+
+# Carrega os dados em uma tabela
+scenic <- read.table("data/SCENIC.txt", header = FALSE)
+```
+
+Algumas informações dos dados:
+
+```{r}
+str(scenic)
+```
+
+Vamos dar nomes às variáveis para facilitar a compreensão dos dados. Os nomes estão de acordo com o que foi descrito na seção anterior.
+
+```{r}
+colnames(scenic) <- c("IDnumber", "LengthStay", "Age", "InfectRisk", "CultRatio", "XrayRatio", "NBeds", "MedSchool", "Region", "DailyCensus", "NNurses", "Facilities")
+```
+
+Além disso, note que as variáveis `MedSchool` (V8) e `Region` (V9) foram categorizadas como variáveis inteiras, mas são, na verdade, categóricas. Portanto, vamos fazer a transformação das variáveis.
+
+```{r}
+scenic$NBeds       <- as.numeric(scenic$NBeds)
+scenic$MedSchool   <- as.factor(scenic$MedSchool)
+scenic$Region      <- as.factor(scenic$Region)
+scenic$DailyCensus <- as.numeric(scenic$DailyCensus)
+scenic$NNurses     <- as.numeric(scenic$NNurses)
+
+# Resumo das variáveis
+summary(scenic)
+
+# Para utilizar diretamente os nomes das variáveis
+attach(scenic)
+```
+
+Vamos explorar a relação da variável `LengthStay` (resposta) com as outras variáveis da massa de dados:
+
+```{r, fig.width=25, fig.height = 22}
+par(mar = c(4,4,2,2), mfrow=c(4,3), cex = 1.5)
+plot(LengthStay~Age)
+plot(LengthStay~InfectRisk)
+plot(LengthStay~CultRatio)
+plot(LengthStay~XrayRatio)
+plot(LengthStay~NBeds)
+plot(LengthStay~MedSchool)
+plot(LengthStay~Region)
+plot(LengthStay~DailyCensus)
+plot(LengthStay~NNurses)
+plot(LengthStay~Facilities)
+
+```
+
+A partir desses gráficos, podemos ter alguns *insights*:
+
+  - Percebemos que hospitais afiliados a alguma escola de medicina possuem tempo período médio de internação maior.
+  - A região geográfica 1 (NE) tem maior tempo de internação, enquanto a 4 (W) tem o menor. 
+  - Parece haver uma relação entre `LengthStay` e `InfectRisk`: conforme aumenta o risco de infecção, o tempo de permanência também tende a aumentar.
+  - Também parece haver uma relação entre `LengthStay` e `Facilities`: a tendência é que o tempo de permanência aumente junto com o aumento da porcentagem de serviços oferecidos pelo hospital.
+  - O mesmo que foi observado nos dois itens anteriores também é válido para a relação de `LengthStay` com `XrayRatio`.
+
+### Análise de Regressão
+
+1. Assuma que um modelo de regressão linear simples é adequado para modelar a relação da variável de resposta `LengthStay` a cada uma das variáveis explicativas `InfectRisk`, `Facilities` e `XrayRatio`.  
+
+  + Construa um modelo de regressão para cada um desses pares de variáveis;  
+  + Construa gráficos de dispersão (separados) com as retas de regressão ajustadas para cada caso;  
+  + Calcule o MSE para cada modelo. Que variável explicativa produz menor variabilidade em torno da reta de regressão ajustada?  
+  + Utilizando R^2^ como critério, qual das variáveis explicativas contribui para a maior redução na variabilidade da resposta `LengthStay`?
+
+2. Para cada região geográfica, construa um modelo de regressão para a variável de resposta `LengthStay` em função de `InfectRisk`. Assuma que o modelo de 1a. ordem é adquado para modelar essas relações. Obtenha os modelos de regressão ajustados.  
+
+  + As funções de regressão estimadas são semelhantes  para as quatro regiões? Discuta.  
+  + Calcule o MSE para cada região. A variabilidade em torno da reta de regressão ajustada é semelhante para as quatro regiões?  
+  + Construa intervalos de confiança 95% para o coeficiente angular da reta de regressão para cada região. As retas de regressão para diferentes regiões parecem ter mesma inclinação? O que se pode concluir?  
+  + Construa intervalos de confiança para a resposta esperada correspondendo a `InfectRisk = 5`, para cada região. O que se pode concluir?  
+  + Construa intervalos de previsão para um novo hospital em cada região que tenha `InfectRisk = 5`. O que se pode concluir?
+
+
+
+
+
+
+
+
+
+----
