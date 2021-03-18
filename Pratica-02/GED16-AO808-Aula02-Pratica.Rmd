@@ -61,7 +61,7 @@ Algumas informações dos dados:
 str(scenic)
 ```
 
-Vamos dar nomes às variáveis para facilitar a compreensão dos dados. Os nomes estão de acordo com o que foi descrito na seção anterior.
+Nomeamos as variáveis para facilitar a compreensão dos dados. Os nomes estão de acordo com o que foi descrito na seção anterior.
 
 ```{r}
 colnames(scenic) <- c("IDnumber", "LengthStay", "Age", "InfectRisk", "CultRatio", "XrayRatio", "NBeds", "MedSchool", "Region", "DailyCensus", "NNurses", "Facilities")
@@ -75,7 +75,10 @@ scenic$MedSchool   <- as.factor(scenic$MedSchool)
 scenic$Region      <- as.factor(scenic$Region)
 scenic$DailyCensus <- as.numeric(scenic$DailyCensus)
 scenic$NNurses     <- as.numeric(scenic$NNurses)
+```
 
+Verificando um resumo dos dados:
+```{r}
 # Resumo das variáveis
 summary(scenic)
 
@@ -83,9 +86,9 @@ summary(scenic)
 attach(scenic)
 ```
 
-Vamos explorar a relação da variável `LengthStay` (resposta) com as outras variáveis da massa de dados:
+Vamos explorar a relação de `LengthStay` (variável de resposta) com as outras variáveis da massa de dados:
 
-```{r, fig.width=25, fig.height = 22}
+```{r echo=FALSE, fig.width=25, fig.height = 22}
 par(mar = c(4,4,2,2), mfrow=c(4,3), cex = 1.5)
 plot(LengthStay~Age)
 plot(LengthStay~InfectRisk)
@@ -110,6 +113,69 @@ A partir desses gráficos, podemos ter alguns *insights*:
 
 ### Análise de Regressão
 
+1. Assumimos que o modelo de regressão linear simples é adequado para modelar a relação da variável de resposta `LengthStay` a cada uma das variáveis explicativas `InfectRisk`, `Facilities` e `XrayRatio`. Vamos construir o modelo para cada par de variáveis:
+
+Para LengthStay e InfectRisk:
+```{r}
+stay_risk_rls <- lm(LengthStay ~ InfectRisk)
+summary_risk <- summary(stay_risk_rls)
+summary_risk
+```
+\
+Para LengthStay e Facilities:
+```{r}
+stay_facilities_rls <- lm(LengthStay ~ Facilities)
+summary_facilities <- summary(stay_facilities_rls)
+summary_facilities
+```
+\
+Para LengthStay e XRayRatio:
+```{r}
+stay_xray_rls <- lm(LengthStay ~ XrayRatio)
+summary_xray <- summary(stay_xray_rls)
+summary_xray
+```
+\
+Abaixo temos os gráficos de dispersão com as retas de regressão ajustadas para cada caso:
+
+```{r echo=FALSE, fig.width=30, fig.height = 7}
+par(mar = c(4,4,1,1), mfrow=c(1,3), cex = 1.5)
+plot(InfectRisk, LengthStay)
+abline(stay_risk_rls$coef, col=2, lwd=3)
+
+plot(Facilities, LengthStay)
+abline(stay_facilities_rls$coef, col=2, lwd=3)
+
+plot(XrayRatio, LengthStay)
+abline(stay_xray_rls$coef, col=2, lwd=3)
+```
+
+\
+Agora vamos calcular o MSE (mean square error) para cada modelo. 
+
+```{r}
+# Cálculo do MSE para cada modelo
+
+mse_stay_risk <- sum(stay_risk_rls$residuals**2)/(length(LengthStay)-2)
+mse_stay_facilities <- sum(stay_facilities_rls$residuals**2)/(length(LengthStay)-2)
+mse_stay_xray <- sum(stay_xray_rls$residuals**2)/(length(LengthStay)-2)
+
+cat("MSE para os modelos:", "\n- LengthStay e InfectRisk: ", mse_stay_risk, "\n- LengthStay e Facilities:", mse_stay_facilities, "\n- LengthStay e XRayRatio:", mse_stay_xray)
+```
+Percebemos que a variável explicativa `InfectRisk` está associada ao menor MSE, então produz menor variabilidade em torno da reta de regressão ajustada.
+
+\
+A partir do resumo de cada regressão, podemos obter os R² associados.
+```{r}
+# R² para cada modelo
+
+cat("R² para os modelos:", "\n- LengthStay e InfectRisk: ", summary_risk$r.squared, "\n- LengthStay e Facilities:", summary_facilities$r.squared, "\n- LengthStay e XRayRatio:", summary_xray$r.squared)
+
+```
+Percebemos que a variável explicativa `InfectRisk` contribui para maior redução na variabilidade da resposta `LengthStay`, pois possui maior valor de R². Cerca de 28% da variação em `LengthStay` pode ser explicada utilizando a variável `InfectRisk` para prever `LengthStay` no modelo de regressão linear.
+
+
+### Questões
 1. Assuma que um modelo de regressão linear simples é adequado para modelar a relação da variável de resposta `LengthStay` a cada uma das variáveis explicativas `InfectRisk`, `Facilities` e `XrayRatio`.  
 
   + Construa um modelo de regressão para cada um desses pares de variáveis;  
