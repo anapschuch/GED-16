@@ -103,17 +103,20 @@ plot(LengthStay~Facilities)
 
 ```
 
-A partir desses gráficos, podemos ter alguns *insights*:
+A partir desses gráficos, podemos verificar o seguinte:
 
-  - Percebemos que hospitais afiliados a alguma escola de medicina possuem tempo período médio de internação maior.
+  - Percebemos que hospitais afiliados a alguma escola de medicina possuem tempo médio de internação maior.
   - A região geográfica 1 (NE) tem maior tempo de internação, enquanto a 4 (W) tem o menor. 
   - Parece haver uma relação entre `LengthStay` e `InfectRisk`: conforme aumenta o risco de infecção, o tempo de permanência também tende a aumentar.
   - Também parece haver uma relação entre `LengthStay` e `Facilities`: a tendência é que o tempo de permanência aumente junto com o aumento da porcentagem de serviços oferecidos pelo hospital.
   - O mesmo que foi observado nos dois itens anteriores também é válido para a relação de `LengthStay` com `XrayRatio`.
 
+***
 ### Análise de Regressão
 
-1. Assumimos que o modelo de regressão linear simples é adequado para modelar a relação da variável de resposta `LengthStay` a cada uma das variáveis explicativas `InfectRisk`, `Facilities` e `XrayRatio`. Vamos construir o modelo para cada par de variáveis:
+### Questão 1
+#### 1.1
+Assumimos que o modelo de regressão linear simples é adequado para modelar a relação da variável de resposta `LengthStay` a cada uma das variáveis explicativas `InfectRisk`, `Facilities` e `XrayRatio`. Vamos construir o modelo para cada par de variáveis:
 
 Para LengthStay e InfectRisk:
 ```{r}
@@ -135,7 +138,8 @@ stay_xray_rls <- lm(LengthStay ~ XrayRatio)
 summary_xray <- summary(stay_xray_rls)
 summary_xray
 ```
-\
+***
+#### 1.2
 Abaixo temos os gráficos de dispersão com as retas de regressão ajustadas para cada caso:
 
 ```{r echo=FALSE, fig.width=30, fig.height = 7}
@@ -150,7 +154,8 @@ plot(XrayRatio, LengthStay)
 abline(stay_xray_rls$coef, col=2, lwd=3)
 ```
 
-\
+***
+#### 1.3
 Agora vamos calcular o MSE (mean square error) para cada modelo. 
 
 ```{r}
@@ -164,7 +169,8 @@ cat("MSE para os modelos:", "\n- LengthStay e InfectRisk: ", mse_stay_risk, "\n-
 ```
 Percebemos que a variável explicativa `InfectRisk` está associada ao menor MSE, então produz menor variabilidade em torno da reta de regressão ajustada.
 
-\
+***
+#### 1.4
 A partir do resumo de cada regressão, podemos obter os R² associados.
 ```{r}
 # R² para cada modelo
@@ -174,124 +180,155 @@ cat("R² para os modelos:", "\n- LengthStay e InfectRisk: ", summary_risk$r.squa
 ```
 Percebemos que a variável explicativa `InfectRisk` contribui para maior redução na variabilidade da resposta `LengthStay`, pois possui maior valor de R². Cerca de 28% da variação em `LengthStay` pode ser explicada utilizando a variável `InfectRisk` para prever `LengthStay` no modelo de regressão linear.
 
+***
 ### Questão 2
 #### 2.1
 
-Para Lenght_Stay x InfectRisk na região NE
+Queremos construir um modelo de regressão para variável resposta `LengthStay` em função de `InfectRisk` para cada região geográfica.
+ 
+Para LenghtStay x InfectRisk na região NE:
 ```{r}
 scenic_NE = scenic[scenic$Region == 1,]
 lenght_infect_NE_rls = lm(LengthStay~InfectRisk,data = scenic_NE)
 summary_ls_ir_NE = summary(lenght_infect_NE_rls)
 summary_ls_ir_NE
 ```
-Para Lenght_Stay x InfectRisk na região NC
+\
+Para LenghtStay x InfectRisk na região NC:
 ```{r}
 scenic_NC = scenic[scenic$Region == 2,]
 lenght_infect_NC_rls = lm(LengthStay~InfectRisk,data = scenic_NC)
 summary_ls_ir_NC = summary(lenght_infect_NC_rls)
 summary_ls_ir_NC
 ```
-Para Lenght_Stay x InfectRisk na região S
+\
+Para LenghtStay x InfectRisk na região S:
 ```{r}
 scenic_S = scenic[scenic$Region == 3,]
 lenght_infect_S_rls = lm(LengthStay~InfectRisk,data = scenic_S)
 summary_ls_ir_S = summary(lenght_infect_S_rls)
 summary_ls_ir_S
 ```
-Para Lenght_Stay x InfectRisk na região W
+\
+Para Lenght_Stay x InfectRisk na região W:
 ```{r}
 scenic_W = scenic[scenic$Region == 4,]
 lenght_infect_W_rls = lm(LengthStay~InfectRisk,data = scenic_W)
 summary_ls_ir_W = summary(lenght_infect_W_rls)
 summary_ls_ir_W
 ```
+\
+Veja os gráficos de disperção com as retas de regressão para cada uma das regiões. Note que os limites nos eixos vertical e horizontal são os mesmos para os quatro gráficos.
+
+```{r echo=FALSE, fig.width=12, fig.height = 6}
+par(mar = c(4,4,1,1), mfrow=c(2,2))
+plot(scenic_NE$InfectRisk, scenic_NE$LengthStay, xlim=c(1,8), ylim=c(6, 20))
+abline(lenght_infect_NE_rls$coef, col=2, lwd=3)
+
+plot(scenic_NC$InfectRisk, scenic_NC$LengthStay, xlim=c(1,8), ylim=c(6, 20))
+abline(lenght_infect_NC_rls$coef, col=2, lwd=3)
+
+plot(scenic_S$InfectRisk, scenic_S$LengthStay, xlim=c(1,8), ylim=c(6, 20))
+abline(lenght_infect_S_rls$coef, col=2, lwd=3)
+
+plot(scenic_W$InfectRisk, scenic_W$LengthStay, xlim=c(1,8), ylim=c(6, 20))
+abline(lenght_infect_W_rls$coef, col=2, lwd=3)
+```
+
+\
 Assim, observa-se que as retas de regressão são significativamente distintas, pois enquanto na região W o coeficiente angular se aproxima de zero, é próximo de 0.50 nas regiões NC e S e superior ao dobro disso na região NE.
 
+***
 #### 2.2
+Agora vamos calcular o MSE para cada uma das regiões:
 
 ```{r}
-# Cálculo do MSE para cada modelo
+# Cálculo do MSE para cada região
 
-mse_stay_risk_NE <- sum(lenght_infect_NE_rls$residuals**2)/(length(LengthStay)-2)
-mse_stay_risk_NC <- sum(lenght_infect_NC_rls$residuals**2)/(length(LengthStay)-2)
-mse_stay_risk_S <- sum(lenght_infect_S_rls$residuals**2)/(length(LengthStay)-2)
-mse_stay_risk_W <- sum(lenght_infect_W_rls$residuals**2)/(length(LengthStay)-2)
+mse_stay_risk_NE <- sum(lenght_infect_NE_rls$residuals**2)/(length(scenic_NE$LengthStay)-2)
+mse_stay_risk_NC <- sum(lenght_infect_NC_rls$residuals**2)/(length(scenic_NC$LengthStay)-2)
+mse_stay_risk_S <- sum(lenght_infect_S_rls$residuals**2)/(length(scenic_S$LengthStay)-2)
+mse_stay_risk_W <- sum(lenght_infect_W_rls$residuals**2)/(length(scenic_W$LengthStay)-2)
 
-cat("MSE para os modelos LengthStay e InfectRisk:", "\n- NE: ", mse_stay_risk_NE, "\n- NC: ", mse_stay_risk_NC, "\n- W: ", mse_stay_risk_W,"\n- S: ",mse_stay_risk_S)
+cat("MSE para os modelos de LengthStay e InfectRisk em cada região:", "\n- NE:", mse_stay_risk_NE, "\n- NC:", mse_stay_risk_NC,"\n- S:",mse_stay_risk_S, "\n- W:", mse_stay_risk_W)
 ```
-Dessa forma percebe-se que a variabilidade em torno da reta é semelhante para as regiões NC e S, mas substancialmente distinta das observadas nas demais regiões.
 
-#### 2.3
+Dessa forma percebe-se que a variabilidade em torno da reta é semelhante para as regiões NC, W e S. Já a variabilidade da região NE é substancialmente distinta das demais.
 
-Região NE
-```{r}
+***
+#### 2.3   
+Agora vamos construir intervalos de confiança 95% para os coeficientes angular das retas de regressão:
+
+```{r results="hold"}
 # IC para os coeficientes
+cat("Região NE:\n")
 confint.lm(lenght_infect_NE_rls, level=0.95)
-```
-Região NC
-```{r}
-# IC para os coeficientes
+
+cat("\nRegião NC:\n")
 confint.lm(lenght_infect_NC_rls, level=0.95)
-```
-Região W
-```{r}
-# IC para os coeficientes
+
+cat("\nRegião S:\n")
+confint.lm(lenght_infect_S_rls, level=0.95)
+
+cat("\nRegião W:\n")
 confint.lm(lenght_infect_W_rls, level=0.95)
 ```
-Região S
-```{r}
-# IC para os coeficientes
-confint.lm(lenght_infect_S_rls, level=0.95)
-```
-As retas não devem possuir a mesma inclinação e todas as regiões, pois como os intervalos supostos para as inclinações médias não possuem interseção entre todas as regiões é improvável que todos possuam inclinação semelhanteou seja, o tempo de estadia ,em média, não depende da mesma forma do risco de infecção em todas as regiões.
+Assim, temos os intervalos de confiança 95% para o coeficiente angular de cada região:
 
-#### 2.4
-Região NE
-```{r}
-E_IR_NE <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_NE_rls, newdata=E_IR_NE, interval="confidence", level = 0.95)
-```
-Região NC
-```{r}
-E_IR_NC <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_NC_rls, newdata=E_IR_NC, interval="confidence", level = 0.95)
-```
-Região W
-```{r}
-E_IR_W <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_W_rls, newdata=E_IR_W, interval="confidence", level = 0.95)
-```
+- Região NE: (0.698, 1.997)
+- Região NC: (0.204, 0.762)
+- Região S: (0.300, 0.750)
+- Região W: (-0.639, 0.673)
 
-Região S
-```{r}
-E_IR_S <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_S_rls, newdata=E_IR_S, interval="confidence", level = 0.95)
-```
-Espera-se que o tempo médio de estadia quando InfectRisk=5 seja, em média, maior na Região NE e menor na Região W, sendo intermediário nas demais regiões.
+As retas não devem possuir a mesma inclinação em todas as regiões, já que os intervalos de confiança para as inclinações médias não possuem interseção. Ou seja, o tempo de estadia, em média, não depende da mesma forma do risco de infecção em todas as regiões. Entretanto, percebe-se que os intervalos de confiança para as inclinações das retas de regressão das regiões NC e S são semelhantes, o que demonstra que podem ter inclinações parecidas.
 
+***
+#### 2.4 
+Vamos estimar o valor médio de `LengthStay` quando `InfectRisk = 5`, para cada região.
+
+Região NE:
+```{r}
+E_IR <- data.frame(InfectRisk = 5)
+predict.lm(lenght_infect_NE_rls, newdata=E_IR, interval="confidence", level = 0.95)
+```
+Concluímos, com 95% de confiança, que o `LengthStay` esperado para um `InfectRisk = 5` na região NE deve estar entre 10.46 e 12.09. Fazemos o mesmo para as outras 3 regiões. 
+
+```{r results = "hold"}
+cat("Região NC:\n")
+predict.lm(lenght_infect_NC_rls, newdata=E_IR, interval="confidence", level = 0.95)
+cat("\nIntervalo: (9.57, 10.38)\n")
+
+cat("\nRegião S:\n")
+predict.lm(lenght_infect_S_rls, newdata=E_IR, interval="confidence", level = 0.95)
+cat("\nIntervalo: (9.35, 10.16)\n")
+
+cat("\nRegião W:\n")
+predict.lm(lenght_infect_W_rls, newdata=E_IR, interval="confidence", level = 0.95)
+cat("\nIntervalo: (7.44, 8.81)\n")
+```
+Espera-se que o tempo médio de estadia quando `InfectRisk = 5` seja, em média, maior na Região NE e menor na Região W, sendo intermediário nas demais regiões.
+
+***
 #### 2.5
-Região NE
-```{r}
-E_IR_NE <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_NE_rls, newdata=E_IR_NE, interval="prediction", level = 0.95)
-```
-Região NC
-```{r}
-E_IR_NC <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_NC_rls, newdata=E_IR_NC, interval="prediction", level = 0.95)
-```
-Região W
-```{r}
-E_IR_W <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_W_rls, newdata=E_IR_W, interval="prediction", level = 0.95)
-```
+Agora vamos construir intervalos de previsão, em cada região, para um novo hospital que tenha `InfectRisk = 5`.
 
-Região S
-```{r}
-E_IR_S <- data.frame(InfectRisk = 5)
-predict.lm(lenght_infect_S_rls, newdata=E_IR_S, interval="prediction", level = 0.95)
-```
+```{r results = "hold"}
+cat("Região NE:\n")
+predict.lm(lenght_infect_NE_rls, newdata=E_IR, interval="prediction", level = 0.95)
+cat("\nIntervalo: (6.91, 15.64)\n")
 
-##### Assumindo que os erros residuais são normalemnte distribuídos, espera-se que o tempo de estadia quando InfectRisk=5 seja menor na região W e maior nas demais regiões.
+cat("\nRegião NC:\n")
+predict.lm(lenght_infect_NC_rls, newdata=E_IR, interval="prediction", level = 0.95)
+cat("\nIntervalo: (7.86, 12.09)\n")
+
+cat("\nRegião S:\n")
+predict.lm(lenght_infect_S_rls, newdata=E_IR, interval="prediction", level = 0.95)
+cat("\nIntervalo: (7.75, 11.76)\n")
+
+cat("\nRegião W:\n")
+predict.lm(lenght_infect_W_rls, newdata=E_IR, interval="prediction", level = 0.95)
+cat("\nIntervalo: (5.79, 10.45)\n")
+```
+Concluímos que os intervalos de previsão para `LengthStay` quando `InfectRisk = 5` de um *único* novo hospital, em todas as regiões, são mais largos que os intervalos de confiança para o `LengthStay` médio. Isso é esperado, já que o erro de prever um único valor de uma variável resposta é sempre maior do que o erro de estimar sua média.
 
 ----
